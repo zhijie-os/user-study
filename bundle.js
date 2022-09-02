@@ -23125,45 +23125,77 @@ thickness.addEventListener('change', e => {
   let val = e.target.value / 10;
   val += 1;
   window.thickness = val;
-}); // hook buttons and handler
+});
+const selectButton = document.getElementById('select_button');
+const drawButton = document.getElementById('draw_button');
+const frameButton = document.getElementById('frame_button');
+const saveButton = document.getElementById('save_button');
+const emitButton = document.getElementById('emit_button');
+const motionButton = document.getElementById('motion_dropdown');
+const actionButton = document.getElementById('action_dropdown');
+const contourButton = document.getElementById('contour_button');
+drawButton.setAttribute('disabled', 'true');
+frameButton.setAttribute('disabled', 'true');
+saveButton.setAttribute('disabled', 'true');
+emitButton.setAttribute('disabled', 'true');
+motionButton.setAttribute('disabled', 'true');
+actionButton.setAttribute('disabled', 'true');
+
+const disableAll = () => {
+  selectButton.setAttribute('disabled', 'true');
+  drawButton.setAttribute('disabled', 'true');
+  frameButton.setAttribute('disabled', 'true');
+  saveButton.setAttribute('disabled', 'true');
+  emitButton.setAttribute('disabled', 'true');
+  motionButton.setAttribute('disabled', 'true');
+  actionButton.setAttribute('disabled', 'true');
+}; // hook buttons and handler
+
 
 const select = () => {
   opencvPlane.style.zIndex = "1";
   konvaPlane.style.zIndex = "0";
+  disableAll();
 };
 
-document.getElementById('select_button')?.addEventListener('click', select);
+selectButton?.addEventListener('click', select);
 
 const draw = () => {
   opencvPlane.style.zIndex = "0";
   konvaPlane.style.zIndex = "1";
 };
 
-document.getElementById('draw_button')?.addEventListener('click', draw); // this function should add a new frame 
+drawButton?.addEventListener('click', draw); // this function should add a new frame 
 
 const frame = () => {
   app.canvas.add_frame(bodyParts);
 };
 
-document.getElementById('frame_button')?.addEventListener('click', frame); // register button event handlers
+frameButton?.addEventListener('click', frame); // register button event handlers
 
 const save = () => {
   app.canvas.add_frame(bodyParts);
   app.canvas.finish_animation("bind");
+  disableAll();
+  selectButton.removeAttribute('disabled');
 };
 
-document.getElementById('save_button')?.addEventListener('click', save);
+saveButton?.addEventListener('click', save);
 
 const emit = () => {
   app.canvas.add_frame(bodyParts);
   app.canvas.finish_animation();
   app.canvas.mode = "emit";
+  disableAll();
 };
 
-document.getElementById('emit_button')?.addEventListener('click', emit);
+emitButton?.addEventListener('click', emit);
 
 const motion = e => {
   app.canvas.new_motion(e.target.innerHTML.toLowerCase());
+  disableAll();
+  selectButton.removeAttribute('disabled');
+  document.getElementById('motion_button').classList.remove("show");
 };
 
 document.getElementById('motion_button')?.addEventListener('click', motion);
@@ -23171,6 +23203,9 @@ document.getElementById('motion_button')?.addEventListener('click', motion);
 const action = e => {
   app.canvas.add_frame(bodyParts);
   app.canvas.action_setup(e.target.innerHTML);
+  disableAll();
+  selectButton.removeAttribute('disabled');
+  document.getElementById('action_button').classList.remove("show");
 };
 
 document.getElementById('action_button')?.addEventListener('click', action);
@@ -23185,7 +23220,13 @@ const contour = e => {
   }
 };
 
-document.getElementById('contour_button')?.addEventListener('click', contour); // end of buttons' registration
+contourButton?.addEventListener('click', contour);
+
+const undo = () => {
+  app.canvas.undo();
+};
+
+document.getElementById('undo_button').addEventListener('click', undo); // end of buttons' registration
 
 const inputVideo = document.getElementById('input_video');
 const videoElement = document.getElementById("input_video");
@@ -23218,6 +23259,8 @@ cvOutput.addEventListener("click", e => {
 
   if (theClosetPart) {
     app.canvas.select(theClosetPart, bodyParts[theClosetPart]);
+    drawButton.removeAttribute('disabled');
+    motionButton.removeAttribute('disabled');
     draw();
   }
 });
@@ -23399,6 +23442,14 @@ class Canvas {
           shadowOpacity: 1
         });
         this.stage.layer.add(this.currentLine);
+        document.getElementById('motion_dropdown').setAttribute('disabled', 'true');
+
+        if (this.mode != "emit") {
+          document.getElementById('frame_button').removeAttribute('disabled');
+          document.getElementById('save_button').removeAttribute('disabled');
+          document.getElementById('emit_button').removeAttribute('disabled');
+          document.getElementById('action_dropdown').removeAttribute('disabled');
+        }
       }
     });
     this.stage.stage.on('mouseup touchend', () => {
@@ -23476,6 +23527,36 @@ class Canvas {
 
       this.currentAnimation = null;
     }
+  }
+
+  undo() {
+    let line = this.currentFrame.pop();
+
+    if (line) {
+      line.destroy();
+      console.log(this.currentAnimation);
+      console.log(this.currentFrame);
+
+      if (this.currentAnimation.frames.length == 0 && this.currentFrame.length == 0) {
+        const selectButton = document.getElementById('select_button');
+        const drawButton = document.getElementById('draw_button');
+        const frameButton = document.getElementById('frame_button');
+        const saveButton = document.getElementById('save_button');
+        const emitButton = document.getElementById('emit_button');
+        const motionButton = document.getElementById('motion_dropdown');
+        const actionButton = document.getElementById('action_dropdown');
+        const contourButton = document.getElementById('contour_button');
+        selectButton.setAttribute('disabled', 'true');
+        drawButton.setAttribute('disabled', 'true');
+        frameButton.setAttribute('disabled', 'true');
+        saveButton.setAttribute('disabled', 'true');
+        emitButton.setAttribute('disabled', 'true');
+        motionButton.setAttribute('disabled', 'true');
+        actionButton.setAttribute('disabled', 'true');
+        drawButton.removeAttribute('disabled');
+        motionButton.removeAttribute('disabled');
+      }
+    }
   } // create a new contour line
 
 
@@ -23527,6 +23608,7 @@ class Canvas {
 
     this.currentAnimation = null;
     this.mode = "drawing";
+    document.getElementById('select_button').removeAttribute('disabled');
   } // // keep emitting the particle
   // update_emitters(bodyParts) {
   //     // update every particles
