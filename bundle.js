@@ -23229,6 +23229,7 @@ const undo = () => {
 document.getElementById('undo_button').addEventListener('click', undo); // end of buttons' registration
 
 const inputVideo = document.getElementById('input_video');
+const inputVideo2 = document.getElementById('input_video_2');
 const videoElement = document.getElementById("input_video");
 const canvasElement = document.getElementById("output_canvas");
 const canvasCtx = canvasElement.getContext("2d");
@@ -23349,17 +23350,59 @@ pose.setOptions({
   minTrackingConfidence: 0.8
 });
 pose.onResults(onResults);
-const camera = new Camera(inputVideo, {
-  onFrame: async () => {
+window.pose = pose;
+window.inputVideo = inputVideo;
+
+inputVideo.oncanplay = () => {
+  inputVideo.play();
+  window.init();
+};
+
+const videoSlider = document.getElementById('video-slider');
+const videoButton = document.getElementById('video-button');
+
+videoButton.onclick = () => {
+  if (inputVideo.paused) {
+    inputVideo.play();
+  } else {
+    inputVideo.pause();
+  }
+};
+
+videoSlider.oninput = event => {
+  videoSlider.value = event.target.value;
+  inputVideo.currentTime = videoSlider.value / 100 * inputVideo.duration;
+};
+
+window.init = () => {
+  pose.initialize();
+  pose.reset();
+  setInterval(async () => {
     await pose.send({
       image: inputVideo
     });
+    let current = inputVideo.currentTime / inputVideo.duration; // console.log(current)
+
+    videoSlider.value = current * 100;
+  }, 100);
+}; // setTimeout(() => {
+//   console.log('start')
+//   window.init()
+// }, 3000)
+
+/*
+const camera = new Camera(inputVideo2, {
+  onFrame: async () => {
+    window.input = inputVideo
+    await pose.send({ image: new Image() });
   },
   width: WIDTH,
   height: HEIGHT,
   facingMode: 'environment'
 });
+
 camera.start();
+*/
 
 },{"./canvas.js":61}],61:[function(require,module,exports){
 "use strict";
